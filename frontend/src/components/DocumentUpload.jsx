@@ -72,7 +72,12 @@ const DocumentUpload = ({ onFileSelect }) => {
   return (
     <Paper
       sx={{
-        p: 8,
+        p: 12,
+        py: 16,
+        minHeight: '600px',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
         textAlign: 'center',
         border: dragActive ? '2px dashed #ffffff' : '2px dashed #404855',
         borderRadius: 3,
@@ -104,19 +109,19 @@ const DocumentUpload = ({ onFileSelect }) => {
         }}
       />
       
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 6 }}>
         {dragActive ? (
-          <CloudUpload sx={{ fontSize: 72, color: '#ffffff', opacity: 0.9 }} />
+          <CloudUpload sx={{ fontSize: 120, color: '#ffffff', opacity: 0.9 }} />
         ) : (
-          <PictureAsPdf sx={{ fontSize: 72, color: '#ffffff', opacity: 0.7 }} />
+          <PictureAsPdf sx={{ fontSize: 120, color: '#ffffff', opacity: 0.7 }} />
         )}
       </Box>
 
-      <Typography variant="h4" sx={{ mb: 3, color: '#ffffff', fontWeight: 500 }}>
+      <Typography variant="h3" sx={{ mb: 4, color: '#ffffff', fontWeight: 500 }}>
         Spør om hva som helst
       </Typography>
 
-      <Typography variant="body1" sx={{ mb: 4, color: 'rgba(255, 255, 255, 0.7)', fontSize: '1.1rem' }}>
+      <Typography variant="body1" sx={{ mb: 6, color: 'rgba(255, 255, 255, 0.7)', fontSize: '1.2rem' }}>
         Dra og slipp PDF-filen her eller klikk for å velge
       </Typography>
 

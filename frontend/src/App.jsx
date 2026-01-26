@@ -106,7 +106,6 @@ function App() {
           sx={{
             bgcolor: '#13264A',
             py: 8,
-            borderBottom: '2px solid rgba(255, 255, 255, 0.1)',
             textAlign: 'center'
           }}
         >
