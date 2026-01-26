@@ -3,3 +3,9 @@
 # azure-monitor-opentelemetry 
 
 azure-functions
+azure-storage-blob
+azure-ai-formrecognizer
+openai
+azure-identity
+python-multipart
+aiofiles
