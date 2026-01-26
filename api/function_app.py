@@ -22,7 +22,7 @@ def get_clients():
     
     if not blob_service_client:
         # Use connection string for storage
-        storage_connection_string = os.getenv('AzureWebJobsStorage')
+        storage_connection_string = os.getenv('AZURE_STORAGE_CONNECTION_STRING') or os.getenv('AzureWebJobsStorage')
         blob_service_client = BlobServiceClient.from_connection_string(storage_connection_string)
     
     if not doc_client:
@@ -93,7 +93,7 @@ def upload_pdf(req: func.HttpRequest) -> func.HttpResponse:
     except Exception as e:
         logging.error(f"Upload error: {str(e)}")
         return func.HttpResponse(
-            json.dumps({"error": "Upload failed"}),
+            json.dumps({"error": f"Upload failed: {str(e)}"}),
             status_code=500,
             mimetype="application/json"
         )
