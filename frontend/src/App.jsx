@@ -27,10 +27,14 @@ const theme = createTheme({
     },
   },
   typography: {
+    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
-      fontWeight: 700,
-      fontSize: '3.5rem',
-      color: '#2C5F2D',
+      fontFamily: '"Inter", sans-serif',
+      fontWeight: 900,
+      fontSize: '4rem',
+      color: '#ffffff',
+      letterSpacing: '-0.025em',
+      textTransform: 'uppercase'
     },
     h2: {
       fontWeight: 600,
@@ -100,30 +104,27 @@ function App() {
         {/* Hero Section */}
         <Box
           sx={{
-            bgcolor: 'rgba(255, 255, 255, 0.95)',
+            bgcolor: '#13264A',
             py: 8,
-            borderBottom: '1px solid #e0e0e0',
+            borderBottom: '2px solid rgba(255, 255, 255, 0.1)',
             textAlign: 'center'
           }}
         >
           <Container maxWidth="lg">
-            {/* Placeholder for DN Logo */}
+            {/* DN Brand Text */}
             <Box sx={{ mb: 4 }}>
-              <img 
-                src="/assets/DN-logo.png" 
-                alt="Dagens Næringsliv" 
-                style={{ height: '80px', objectFit: 'contain' }}
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'block';
-                }}
-              />
               <Typography 
                 variant="h1" 
                 component="h1"
                 sx={{ 
-                  display: 'none',
-                  mb: 2 
+                  fontFamily: '"Inter", sans-serif',
+                  fontWeight: 900,
+                  fontSize: { xs: '2.5rem', md: '4rem' },
+                  color: '#ffffff',
+                  letterSpacing: '-0.025em',
+                  textTransform: 'uppercase',
+                  mb: 2,
+                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
                 }}
               >
                 Dagens Næringsliv
@@ -133,7 +134,12 @@ function App() {
             <Typography 
               variant="h2" 
               component="h2" 
-              sx={{ mb: 2 }}
+              sx={{ 
+                mb: 2,
+                color: '#ffffff',
+                fontWeight: 500,
+                fontSize: { xs: '1.5rem', md: '2rem' }
+              }}
             >
               AI Dokumentanalyse
             </Typography>
@@ -141,9 +147,11 @@ function App() {
             <Typography 
               variant="h6" 
               sx={{ 
-                color: 'text.secondary',
+                color: 'rgba(255, 255, 255, 0.8)',
                 maxWidth: '600px',
-                mx: 'auto'
+                mx: 'auto',
+                fontSize: '1.1rem',
+                fontWeight: 400
               }}
             >
               Last opp dokumenter for å få en intelligent oppsummering og analyse
