@@ -171,7 +171,7 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
         
         Svar på norsk og vær objektiv og faktabasert."""
         
-        user_prompt = f"Analyser følgende dokument:\n\n{extracted_text[:8000]}"  # Limit text length
+        user_prompt = f"Analyser følgende dokument:\n\n{extracted_text[:20000]}"  # Increased text length for larger documents
         
         response = openai_client.chat.completions.create(
             model="gpt-4o-mini",
@@ -179,7 +179,7 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            max_tokens=1000,
+            max_tokens=2000,  # Increased tokens for more detailed analysis
             temperature=0.3
         )
         

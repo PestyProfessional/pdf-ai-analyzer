@@ -14,7 +14,7 @@ const DocumentUpload = ({ onFileSelect }) => {
   const [error, setError] = useState('');
 
   const validateFile = (file) => {
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    const maxSize = 50 * 1024 * 1024; // 50MB to handle 20-50 page documents
     const allowedTypes = ['application/pdf'];
     
     if (!allowedTypes.includes(file.type)) {
@@ -22,7 +22,7 @@ const DocumentUpload = ({ onFileSelect }) => {
     }
     
     if (file.size > maxSize) {
-      return 'Filen er for stor. Maksimal størrelse er 10MB';
+      return 'Filen er for stor. Maksimal størrelse er 50MB';
     }
     
     return null;
@@ -157,7 +157,7 @@ const DocumentUpload = ({ onFileSelect }) => {
           }} 
         />
         <Chip 
-          label="Maks 10MB" 
+          label="Maks 50MB" 
           size="small" 
           variant="outlined"
           sx={{
