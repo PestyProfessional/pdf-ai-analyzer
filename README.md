@@ -75,4 +75,4 @@ Legg til i GitHub Secrets:
 - **Aeonik Typography**: Work Sans font for moderne utseende  
 - **Glassmorphism**: Moderne UI med blur-effekter
 - **Seamless Sections**: Sømløs overgang mellom UI-seksjoner
-- **Responsive Design**: Optimalisert for alle enheter
+- **Responsive Design**: Optimalisert for alle enheter# Trigger deployment
