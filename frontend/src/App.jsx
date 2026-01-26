@@ -27,13 +27,13 @@ const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Work Sans", "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
-      fontFamily: '"Inter", sans-serif',
-      fontWeight: 900,
+      fontFamily: '"Work Sans", sans-serif',
+      fontWeight: 800,
       fontSize: '4rem',
       color: '#ffffff',
-      letterSpacing: '-0.025em',
+      letterSpacing: '-0.02em',
       textTransform: 'uppercase'
     },
     h2: {
@@ -117,14 +117,15 @@ function App() {
                 variant="h1" 
                 component="h1"
                 sx={{ 
-                  fontFamily: '"Inter", sans-serif',
-                  fontWeight: 900,
-                  fontSize: { xs: '2.5rem', md: '4rem' },
+                  fontFamily: '"Work Sans", sans-serif',
+                  fontWeight: 800,
+                  fontSize: { xs: '2.5rem', md: '4.2rem' },
                   color: '#ffffff',
-                  letterSpacing: '-0.025em',
+                  letterSpacing: '-0.02em',
                   textTransform: 'uppercase',
                   mb: 2,
-                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
+                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+                  lineHeight: 1.1
                 }}
               >
                 Dagens Næringsliv
