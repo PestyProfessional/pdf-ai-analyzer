@@ -42,20 +42,49 @@ function App() {
   const handleFileAnalysis = async (file) => {
     setIsAnalyzing(true);
     try {
-      // TODO: Implement Azure Functions API call
-      await new Promise(resolve => setTimeout(resolve, 3000)); // Simulated delay
+      // Step 1: Upload PDF to Azure Functions
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (!uploadResponse.ok) {
+        throw new Error(`Upload failed: ${uploadResponse.statusText}`);
+      }
+      
+      const uploadResult = await uploadResponse.json();
+      const fileId = uploadResult.file_id;
+      
+      // Step 2: Analyze the uploaded PDF
+      const analysisResponse = await fetch(`/api/analyze/${fileId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!analysisResponse.ok) {
+        throw new Error(`Analysis failed: ${analysisResponse.statusText}`);
+      }
+      
+      const analysisResult = await analysisResponse.json();
       
       setAnalysisResult({
-        summary: "Dette er en simulert oppsummering av dokumentet. Implementer Azure Functions for ekte analyse.",
-        keyPoints: [
-          "Hovedpunkt 1 fra dokumentet",
-          "Viktig informasjon 2",
-          "Konklusjon og anbefalinger"
-        ],
-        confidence: 0.85
+        summary: analysisResult.summary,
+        keyPoints: analysisResult.key_points || [],
+        confidence: analysisResult.confidence || 0.8
       });
+      
     } catch (error) {
       console.error('Analysis failed:', error);
+      setAnalysisResult({
+        summary: `Analyse feilet: ${error.message}. Prøv igjen senere.`,
+        keyPoints: ["Kontroller internettforbindelse", "Prøv med en mindre PDF-fil"],
+        confidence: 0
+      });
     } finally {
       setIsAnalyzing(false);
     }
