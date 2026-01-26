@@ -72,16 +72,19 @@ const DocumentUpload = ({ onFileSelect }) => {
   return (
     <Paper
       sx={{
-        p: 6,
+        p: 8,
         textAlign: 'center',
-        border: dragActive ? '2px dashed #2C5F2D' : '2px dashed #ccc',
-        borderRadius: 2,
-        bgcolor: dragActive ? '#f3f7f3' : 'white',
+        border: dragActive ? '2px dashed #ffffff' : '2px dashed #404855',
+        borderRadius: 3,
+        bgcolor: dragActive ? 'rgba(255, 255, 255, 0.1)' : 'rgba(64, 72, 85, 0.8)',
         transition: 'all 0.3s ease',
         cursor: 'pointer',
+        backdropFilter: 'blur(10px)',
         '&:hover': {
-          borderColor: '#2C5F2D',
-          bgcolor: '#f8f9fa'
+          borderColor: '#ffffff',
+          bgcolor: 'rgba(255, 255, 255, 0.05)',
+          transform: 'translateY(-2px)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
         }
       }}
       onDragEnter={handleDrag}
@@ -101,28 +104,37 @@ const DocumentUpload = ({ onFileSelect }) => {
         }}
       />
       
-      <Box sx={{ mb: 3 }}>
+      <Box sx={{ mb: 4 }}>
         {dragActive ? (
-          <CloudUpload sx={{ fontSize: 80, color: 'primary.main' }} />
+          <CloudUpload sx={{ fontSize: 72, color: '#ffffff', opacity: 0.9 }} />
         ) : (
-          <PictureAsPdf sx={{ fontSize: 80, color: 'primary.main' }} />
+          <PictureAsPdf sx={{ fontSize: 72, color: '#ffffff', opacity: 0.7 }} />
         )}
       </Box>
 
-      <Typography variant="h5" sx={{ mb: 2, color: 'primary.main' }}>
-        Last opp dokumentet for å få en oppsummering
+      <Typography variant="h4" sx={{ mb: 3, color: '#ffffff', fontWeight: 500 }}>
+        Spør om hva som helst
       </Typography>
 
-      <Typography variant="body1" sx={{ mb: 3, color: 'text.secondary' }}>
+      <Typography variant="body1" sx={{ mb: 4, color: 'rgba(255, 255, 255, 0.7)', fontSize: '1.1rem' }}>
         Dra og slipp PDF-filen her eller klikk for å velge
       </Typography>
 
       <Button
-        variant="contained"
+        variant="outlined"
         size="large"
         startIcon={<CloudUpload />}
         onClick={() => document.getElementById('file-upload').click()}
-        sx={{ mb: 2 }}
+        sx={{ 
+          mb: 4,
+          color: '#ffffff',
+          borderColor: 'rgba(255, 255, 255, 0.5)',
+          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          '&:hover': {
+            borderColor: '#ffffff',
+            backgroundColor: 'rgba(255, 255, 255, 0.2)'
+          }
+        }}
       >
         Velg dokument
       </Button>
@@ -132,22 +144,47 @@ const DocumentUpload = ({ onFileSelect }) => {
           icon={<PictureAsPdf />} 
           label="PDF" 
           size="small" 
-          sx={{ mr: 1 }} 
+          sx={{ 
+            mr: 1,
+            backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            color: '#ffffff',
+            border: '1px solid rgba(255, 255, 255, 0.3)'
+          }} 
         />
         <Chip 
           label="Maks 10MB" 
           size="small" 
-          variant="outlined" 
+          variant="outlined"
+          sx={{
+            color: 'rgba(255, 255, 255, 0.7)',
+            borderColor: 'rgba(255, 255, 255, 0.3)'
+          }}
         />
       </Box>
 
       {error && (
-        <Alert severity="error" sx={{ mt: 2 }}>
+        <Alert 
+          severity="error" 
+          sx={{ 
+            mt: 2,
+            backgroundColor: 'rgba(244, 67, 54, 0.1)',
+            color: '#ff6b6b',
+            border: '1px solid rgba(244, 67, 54, 0.3)'
+          }}
+        >
           {error}
         </Alert>
       )}
 
-      <Typography variant="caption" sx={{ display: 'block', mt: 2, color: 'text.secondary' }}>
+      <Typography 
+        variant="caption" 
+        sx={{ 
+          display: 'block', 
+          mt: 3, 
+          color: 'rgba(255, 255, 255, 0.5)',
+          fontSize: '0.9rem'
+        }}
+      >
         Dine dokumenter behandles sikkert og slettes automatisk etter analyse
       </Typography>
     </Paper>
