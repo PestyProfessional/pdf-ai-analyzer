@@ -21,6 +21,10 @@ const theme = createTheme({
     secondary: {
       main: '#97BC62',
     },
+    background: {
+      default: '#13264A',
+      paper: 'rgba(255, 255, 255, 0.95)'
+    },
   },
   typography: {
     h1: {
@@ -92,11 +96,11 @@ function App() {
 
   return (
     <ThemeProvider theme={theme}>
-      <Box sx={{ minHeight: '100vh', bgcolor: '#f8f9fa' }}>
+      <Box sx={{ minHeight: '100vh', bgcolor: '#13264A' }}>
         {/* Hero Section */}
         <Box
           sx={{
-            bgcolor: 'white',
+            bgcolor: 'rgba(255, 255, 255, 0.95)',
             py: 8,
             borderBottom: '1px solid #e0e0e0',
             textAlign: 'center'
