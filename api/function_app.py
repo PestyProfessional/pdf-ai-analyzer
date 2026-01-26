@@ -21,9 +21,26 @@ def get_clients():
     global blob_service_client, doc_client
     
     if not blob_service_client:
-        # Use connection string for storage
+        # Try connection string first, then account key, fallback to managed identity
         storage_connection_string = os.getenv('AZURE_STORAGE_CONNECTION_STRING') or os.getenv('AzureWebJobsStorage')
-        blob_service_client = BlobServiceClient.from_connection_string(storage_connection_string)
+        if storage_connection_string and storage_connection_string.strip():
+            blob_service_client = BlobServiceClient.from_connection_string(storage_connection_string)
+        else:
+            # Try using account key
+            account_key = os.getenv('AZURE_STORAGE_ACCOUNT_KEY')
+            if account_key:
+                account_url = "https://pdfaianalyzernorway.blob.core.windows.net"
+                blob_service_client = BlobServiceClient(
+                    account_url=account_url, 
+                    credential=account_key
+                )
+            else:
+                # Fallback to managed identity
+                account_url = "https://pdfaianalyzernorway.blob.core.windows.net"
+                blob_service_client = BlobServiceClient(
+                    account_url=account_url, 
+                    credential=DefaultAzureCredential()
+                )
     
     if not doc_client:
         # Document Intelligence client
