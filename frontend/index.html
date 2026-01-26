@@ -3,17 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF AI Analyzer</title>
+    <title>DN AI Dokumentanalyse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
 </head>
 <body>
-    <div id="app">
-        <h1>PDF AI Analyzer</h1>
-        <p>AI-drevet PDF analyse verktøy</p>
-        <div id="upload-area">
-            <input type="file" id="pdf-upload" accept="application/pdf">
-            <button id="analyze-btn">Analyser PDF</button>
-        </div>
-        <div id="results"></div>
-    </div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>
