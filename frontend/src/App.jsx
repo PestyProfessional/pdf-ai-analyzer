@@ -112,36 +112,31 @@ function App() {
           <Container maxWidth="lg">
             {/* DN Brand Text */}
             <Box sx={{ mb: 4 }}>
-              <Typography 
-                variant="h1" 
-                component="h1"
-                sx={{ 
-                  fontFamily: '"Work Sans", sans-serif',
-                  fontWeight: 800,
-                  fontSize: { xs: '2.5rem', md: '4.2rem' },
-                  color: '#ffffff',
-                  letterSpacing: '-0.02em',
-                  textTransform: 'uppercase',
-                  mb: 2,
-                  textShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-                  lineHeight: 1.1
+              <img 
+                src="/assets/DN-logo.png" 
+                alt="Dagens Næringsliv" 
+                style={{
+                  maxHeight: '240px',
+                  maxWidth: '100%',
+                  marginBottom: '16px',
+                  filter: 'brightness(0) invert(1)',
+                  opacity: 0.95
                 }}
-              >
-                Dagens Næringsliv
-              </Typography>
+              />
             </Box>
             
             <Typography 
               variant="h2" 
               component="h2" 
               sx={{ 
-                mb: 2,
+                mb: 4,
+                mt: -12,
                 color: '#ffffff',
                 fontWeight: 500,
                 fontSize: { xs: '1.5rem', md: '2rem' }
               }}
             >
-              AI Dokumentanalyse
+              Dokumentanalyse
             </Typography>
             
             <Typography 
