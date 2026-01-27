@@ -261,8 +261,9 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
             
             logging.info(f"Using Azure AI Foundry endpoint: {endpoint}, model: {ai_foundry_model}")
             
-            # Azure AI Foundry with /models endpoint uses Azure OpenAI-compatible API
-            # Remove /models suffix for Azure OpenAI SDK (it adds it automatically)
+            # Azure AI Foundry with /models endpoint
+            # Use Azure OpenAI SDK - it works with services.ai.azure.com endpoints
+            # Remove /models for azure_endpoint parameter
             base_endpoint = endpoint.replace('/models', '')
             
             try:
