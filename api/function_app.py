@@ -132,17 +132,19 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
         # Get blob from storage
         blob_service_client, doc_client = get_clients()
         
-        # Find the PDF file in the blob storage
+        # Find the document file in the blob storage
         container_client = blob_service_client.get_container_client("pdf-uploads")
         blobs = container_client.list_blobs(name_starts_with=file_id)
         
-        pdf_blob = None
+        doc_blob = None
         for blob in blobs:
-            if blob.name.endswith('.pdf'):
-                pdf_blob = blob
+            # Support all allowed file types
+            allowed_extensions = ('.pdf', '.txt', '.csv', '.doc', '.docx')
+            if blob.name.lower().endswith(allowed_extensions):
+                doc_blob = blob
                 break
         
-        if not pdf_blob:
+        if not doc_blob:
             return func.HttpResponse(
                 json.dumps({"error": "File not found"}),
                 status_code=404,
@@ -152,12 +154,12 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
         # Download blob content
         blob_client = blob_service_client.get_blob_client(
             container="pdf-uploads", 
-            blob=pdf_blob.name
+            blob=doc_blob.name
         )
         blob_data = blob_client.download_blob().readall()
         
         # Extract text based on file type
-        filename = pdf_blob.name.lower()
+        filename = doc_blob.name.lower()
         if filename.endswith('.txt') or filename.endswith('.csv'):
             # For text files, directly use content
             extracted_text = blob_data.decode('utf-8')
