@@ -196,7 +196,7 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
         # Analyze with Azure OpenAI
         openai_client = openai.AzureOpenAI(
             api_key=os.getenv('OPENAI_API_KEY'),
-            api_version="2024-10-21",
+            api_version="2024-02-01",
             azure_endpoint=os.getenv('OPENAI_ENDPOINT')
         )
         
