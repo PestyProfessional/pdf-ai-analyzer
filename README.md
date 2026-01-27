@@ -6,7 +6,7 @@ AI-drevet dokumentanalyse for Dagens Næringsliv som ekstraherer tekst fra PDF-f
 
 - **PDF Upload**: Dra og slipp PDF-dokumenter (maks 10MB)
 - **AI Tekstekstraksjon**: Azure AI Document Intelligence for robust OCR
-- **Intelligent Analyse**: Azure OpenAI GPT-4o-mini for norskspråklig oppsummering
+- **Intelligent Analyse**: Azure AI Foundry LLM for norskspråklig oppsummering
 - **Sikker Lagring**: Azure Blob Storage i Norge for GDPR-compliance
 
 ## 🏗️ Arkitektur
@@ -19,7 +19,7 @@ AI-drevet dokumentanalyse for Dagens Næringsliv som ekstraherer tekst fra PDF-f
 ### Backend
 - **Azure Functions** (Python) for serverless API
 - **Azure AI Document Intelligence** (Norway East)
-- **Azure OpenAI** (Sweden Central) 
+- **Azure AI Foundry** for LLM-basert dokumentanalyse 
 - **Azure Blob Storage** (Norway East)
 
 ### Deployment
@@ -43,10 +43,21 @@ func start
 
 ## 🔐 Environment Variabler
 
-Legg til i GitHub Secrets:
+### For GitHub Secrets (CI/CD):
+**Se `GITHUB_SECRETS_UPDATE_GUIDE.md` for detaljert steg-for-steg guide.**
+
+Nødvendige secrets:
 - `DOC_INTELLIGENCE_KEY`: Azure Document Intelligence API-nøkkel
-- `OPENAI_API_KEY`: Azure OpenAI API-nøkkel
-- `AZURE_STORAGE_CONNECTION`: Azure Storage tilkoblingsstreng
+- `DOC_INTELLIGENCE_ENDPOINT`: Azure Document Intelligence endpoint URL
+- `AI_FOUNDRY_ENDPOINT`: Azure AI Foundry endpoint (f.eks. https://<resource-name>.services.ai.azure.com)
+- `AI_FOUNDRY_API_KEY`: Azure AI Foundry API-nøkkel
+- `AI_FOUNDRY_MODEL`: Model deployment name i Azure AI Foundry (standard: gpt-4o-mini)
+- `AZURE_STORAGE_CONNECTION_STRING`: Azure Storage tilkoblingsstreng
+- `AZURE_STORAGE_ACCOUNT_KEY`: (valgfritt) Azure Storage account key
+- `AZUREWEBJOBSSTORAGE`: (valgfritt) Azure Functions storage connection
+
+### For Azure Function App (via Azure Portal):
+Se `AZURE_AI_FOUNDRY_SETUP.md` for konfigurasjonsguide.
 
 ## 📊 Kostnadsoptimalisering
 

@@ -31,8 +31,9 @@ jobs:
         env:
           DOC_INTELLIGENCE_ENDPOINT: ${{ secrets.DOC_INTELLIGENCE_ENDPOINT }}
           DOC_INTELLIGENCE_KEY: ${{ secrets.DOC_INTELLIGENCE_KEY }}
-          OPENAI_ENDPOINT: ${{ secrets.OPENAI_ENDPOINT }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          AI_FOUNDRY_ENDPOINT: ${{ secrets.AI_FOUNDRY_ENDPOINT }}
+          AI_FOUNDRY_API_KEY: ${{ secrets.AI_FOUNDRY_API_KEY }}
+          AI_FOUNDRY_MODEL: ${{ secrets.AI_FOUNDRY_MODEL }}
           AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
           AZURE_STORAGE_ACCOUNT_KEY: ${{ secrets.AZURE_STORAGE_ACCOUNT_KEY }}
           AzureWebJobsStorage: ${{ secrets.AZUREWEBJOBSSTORAGE }}

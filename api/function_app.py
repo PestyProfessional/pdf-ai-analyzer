@@ -193,12 +193,68 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
                 mimetype="application/json"
             )
         
-        # Analyze with Azure OpenAI
-        openai_client = openai.AzureOpenAI(
-            api_key=os.getenv('OPENAI_API_KEY'),
-            api_version="2024-02-01",
-            azure_endpoint=os.getenv('OPENAI_ENDPOINT')
-        )
+        # Analyze with Azure OpenAI / Azure AI Foundry
+        # Supports both Azure OpenAI and Azure AI Foundry endpoints
+        ai_foundry_endpoint = os.getenv('AI_FOUNDRY_ENDPOINT')
+        ai_foundry_api_key = os.getenv('AI_FOUNDRY_API_KEY')
+        # Default model - kan overstyres med environment variable
+        # Vanlige navn: gpt-4o-mini, gpt-4o, gpt-35-turbo
+        ai_foundry_model = os.getenv('AI_FOUNDRY_MODEL', 'gpt-4o-mini')
+        
+        if not ai_foundry_endpoint or not ai_foundry_api_key:
+            return func.HttpResponse(
+                json.dumps({"error": "Azure AI configuration missing. Please set AI_FOUNDRY_ENDPOINT and AI_FOUNDRY_API_KEY"}),
+                status_code=500,
+                mimetype="application/json"
+            )
+        
+        # Handle different endpoint formats
+        endpoint = ai_foundry_endpoint.rstrip('/')
+        
+        # Use Azure OpenAI SDK with latest API version
+        # Supports various endpoint formats:
+        # - https://<resource>.cognitiveservices.azure.com/
+        # - https://<resource>.openai.azure.com/
+        # - https://<region>.api.cognitive.microsoft.com/
+        # - https://<resource>.services.ai.azure.com/
+        
+        if 'cognitiveservices.azure.com' in endpoint or 'openai.azure.com' in endpoint:
+            # Direct Azure OpenAI/Cognitive Services endpoint
+            openai_client = openai.AzureOpenAI(
+                api_key=ai_foundry_api_key,
+                api_version="2024-12-01-preview",  # Latest API version
+                azure_endpoint=endpoint
+            )
+        elif 'api.cognitive.microsoft.com' in endpoint:
+            # Regional endpoint - construct resource-specific endpoint
+            # For regional endpoints, we may need the full resource endpoint
+            # Try to use as-is first, or construct from resource name
+            resource_name = os.getenv('AI_FOUNDRY_RESOURCE_NAME', 'pdf-ai-openai-eastus')
+            # If it's a regional endpoint, try to construct full endpoint
+            if 'eastus' in endpoint.lower() or 'eastus2' in endpoint.lower():
+                # Try to use the endpoint as provided, or construct
+                endpoint = endpoint  # Use as provided
+            openai_client = openai.AzureOpenAI(
+                api_key=ai_foundry_api_key,
+                api_version="2024-12-01-preview",
+                azure_endpoint=endpoint
+            )
+        elif 'services.ai.azure.com' in endpoint:
+            # Azure AI Foundry format - add /models if not present
+            if not endpoint.endswith('/models'):
+                endpoint = f"{endpoint}/models"
+            # Use OpenAI SDK with custom base_url for Azure AI Foundry
+            openai_client = openai.OpenAI(
+                api_key=ai_foundry_api_key,
+                base_url=f"{endpoint}/openai/deployments/{ai_foundry_model}"
+            )
+        else:
+            # Default: try Azure OpenAI format with latest API version
+            openai_client = openai.AzureOpenAI(
+                api_key=ai_foundry_api_key,
+                api_version="2024-12-01-preview",
+                azure_endpoint=endpoint
+            )
         
         # Create analysis prompt
         system_prompt = """Du er en AI-assistent som analyserer dokumenter for Dagens Næringsliv. 
@@ -231,8 +287,10 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
         
         user_prompt = f"Analyser følgende dokument:\n\n{extracted_text[:20000]}"  # Increased text length for larger documents
         
+        # Use OpenAI SDK to call the model
+        # Matches Azure OpenAI format: model parameter should be deployment name
         response = openai_client.chat.completions.create(
-            model="gpt-4o-mini",
+            model=ai_foundry_model,  # Model deployment name (e.g., "gpt-4o-mini")
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
