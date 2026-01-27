@@ -6,8 +6,8 @@ import io
 from azure.storage.blob import BlobServiceClient
 from azure.ai.formrecognizer import DocumentAnalysisClient
 from azure.core.credentials import AzureKeyCredential
-import openai
-from azure.identity import DefaultAzureCredential
+from azure.ai.inference import ChatCompletionsClient
+from azure.core.credentials import AzureKeyCredential
 import uuid
 import asyncio
 
@@ -193,95 +193,55 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
                 mimetype="application/json"
             )
         
-        # Analyze with Azure OpenAI / Azure AI Foundry
-        # Supports both Azure OpenAI and Azure AI Foundry endpoints
+        # Analyse med Azure AI Foundry (ikke Azure OpenAI)
+        # Kun AI Foundry-endpoint på services.ai.azure.com støttes.
         ai_foundry_endpoint = os.getenv('AI_FOUNDRY_ENDPOINT')
         ai_foundry_api_key = os.getenv('AI_FOUNDRY_API_KEY')
-        # Default model - kan overstyres med environment variable
-        # Vanlige navn: gpt-4o-mini, gpt-4o, gpt-35-turbo
         ai_foundry_model = os.getenv('AI_FOUNDRY_MODEL', 'gpt-4o-mini')
         
         if not ai_foundry_endpoint or not ai_foundry_api_key:
             return func.HttpResponse(
-                json.dumps({"error": "Azure AI configuration missing. Please set AI_FOUNDRY_ENDPOINT and AI_FOUNDRY_API_KEY"}),
+                json.dumps({"error": "Azure AI Foundry-konfigurasjon mangler. Sett AI_FOUNDRY_ENDPOINT og AI_FOUNDRY_API_KEY (ikke Azure OpenAI)."}),
                 status_code=500,
                 mimetype="application/json"
             )
         
-        # Handle different endpoint formats
         endpoint = ai_foundry_endpoint.rstrip('/')
-        
-        # Validate endpoint format
         if not endpoint.startswith('https://'):
             return func.HttpResponse(
-                json.dumps({"error": f"Invalid endpoint format: {endpoint}. Must start with https://"}),
+                json.dumps({"error": f"Ugyldig endpoint: {endpoint}. Må starte med https://"}),
                 status_code=500,
                 mimetype="application/json"
             )
         
-        # Use Azure OpenAI SDK with latest API version
-        # Supports various endpoint formats:
-        # - https://<resource>.cognitiveservices.azure.com/
-        # - https://<resource>.openai.azure.com/
-        # - https://<region>.api.cognitive.microsoft.com/
-        # - https://<resource>.services.ai.azure.com/
-        
-        if 'cognitiveservices.azure.com' in endpoint or 'openai.azure.com' in endpoint:
-            # Direct Azure OpenAI/Cognitive Services endpoint
-            logging.info(f"Using Azure OpenAI endpoint: {endpoint}, model: {ai_foundry_model}")
-            try:
-                openai_client = openai.AzureOpenAI(
-                    api_key=ai_foundry_api_key,
-                    api_version="2024-12-01-preview",  # Latest API version
-                    azure_endpoint=endpoint
-                )
-            except Exception as client_error:
-                logging.error(f"Failed to create Azure OpenAI client: {client_error}")
-                raise Exception(f"Kunne ikke opprette Azure OpenAI klient: {str(client_error)}")
-        elif 'api.cognitive.microsoft.com' in endpoint:
-            # Regional endpoint - construct resource-specific endpoint
-            # For regional endpoints, we may need the full resource endpoint
-            # Try to use as-is first, or construct from resource name
-            resource_name = os.getenv('AI_FOUNDRY_RESOURCE_NAME', 'pdf-ai-openai-eastus')
-            # If it's a regional endpoint, try to construct full endpoint
-            if 'eastus' in endpoint.lower() or 'eastus2' in endpoint.lower():
-                # Try to use the endpoint as provided, or construct
-                endpoint = endpoint  # Use as provided
-            openai_client = openai.AzureOpenAI(
-                api_key=ai_foundry_api_key,
-                api_version="2024-12-01-preview",
-                azure_endpoint=endpoint
+        if 'openai.azure.com' not in endpoint and 'services.ai.azure.com' not in endpoint:
+            return func.HttpResponse(
+                json.dumps({
+                    "error": "Støtter Azure OpenAI eller Azure AI Foundry. Sett AI_FOUNDRY_ENDPOINT til riktig endpoint."
+                }),
+                status_code=500,
+                mimetype="application/json"
             )
-        elif 'services.ai.azure.com' in endpoint:
-            # Azure AI Foundry format
-            # Endpoint format: https://<resource>.services.ai.azure.com/models
-            # Ensure /models is present
+        
+        # Handle both Azure OpenAI and AI Foundry formats
+        if 'openai.azure.com' in endpoint:
+            # Azure OpenAI format: https://<resource>.openai.azure.com
+            base_endpoint = endpoint
+        else:
+            # AI Foundry format: https://<resource>.services.ai.azure.com/models
             if not endpoint.endswith('/models'):
                 endpoint = f"{endpoint}/models"
-            
-            logging.info(f"Using Azure AI Foundry endpoint: {endpoint}, model: {ai_foundry_model}")
-            
-            # Azure AI Foundry with /models endpoint
-            # Use Azure OpenAI SDK - it works with services.ai.azure.com endpoints
-            # Remove /models for azure_endpoint parameter
             base_endpoint = endpoint.replace('/models', '')
-            
-            try:
-                openai_client = openai.AzureOpenAI(
-                    api_key=ai_foundry_api_key,
-                    api_version="2024-12-01-preview",
-                    azure_endpoint=base_endpoint
-                )
-            except Exception as client_error:
-                logging.error(f"Failed to create Azure OpenAI client for Foundry: {client_error}")
-                raise Exception(f"Kunne ikke opprette Azure AI Foundry klient: {str(client_error)}")
-        else:
-            # Default: try Azure OpenAI format with latest API version
-            openai_client = openai.AzureOpenAI(
-                api_key=ai_foundry_api_key,
-                api_version="2024-12-01-preview",
-                azure_endpoint=endpoint
+        
+        logging.info(f"Bruker Azure AI Foundry: {endpoint}, modell: {ai_foundry_model}")
+        try:
+            ai_client = ChatCompletionsClient(
+                endpoint=endpoint,
+                credential=AzureKeyCredential(ai_foundry_api_key)
             )
+        except Exception as client_error:
+            logging.error(f"Kunne ikke opprette AI Foundry-klient: {client_error}")
+            raise Exception(f"Kunne ikke opprette Azure AI Foundry-klient: {str(client_error)}")
         
         # Create analysis prompt
         system_prompt = """Du er en AI-assistent som analyserer dokumenter for Dagens Næringsliv. 
@@ -314,11 +274,10 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
         
         user_prompt = f"Analyser følgende dokument:\n\n{extracted_text[:20000]}"  # Increased text length for larger documents
         
-        # Use OpenAI SDK to call the model
-        # Matches Azure OpenAI format: model parameter should be deployment name
-        logging.info(f"Calling OpenAI API with model: {ai_foundry_model}")
+        # Kall AI Foundry-modell (model = deployment-navn i Foundry)
+        logging.info(f"Kaller AI Foundry med modell: {ai_foundry_model}")
         try:
-            response = openai_client.chat.completions.create(
+            response = ai_client.complete(
                 model=ai_foundry_model,  # Model deployment name (e.g., "gpt-4o-mini")
                 messages=[
                     {"role": "system", "content": system_prompt},
@@ -327,12 +286,11 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
                 max_tokens=2000,  # Increased tokens for more detailed analysis
                 temperature=0.3
             )
-            logging.info("OpenAI API call successful")
+            logging.info("AI Foundry-kall OK")
         except Exception as api_error:
             error_str = str(api_error)
-            logging.error(f"OpenAI API error: {error_str}", exc_info=True)
-            # Re-raise with more context
-            raise Exception(f"OpenAI API feil: {error_str}")
+            logging.error(f"AI Foundry-feil: {error_str}", exc_info=True)
+            raise Exception(f"Azure AI Foundry feil: {error_str}")
         
         ai_analysis = response.choices[0].message.content
         

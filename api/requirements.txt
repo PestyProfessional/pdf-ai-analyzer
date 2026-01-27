@@ -5,7 +5,7 @@
 azure-functions
 azure-storage-blob
 azure-ai-formrecognizer
-openai
+azure-ai-inference
 azure-identity
 python-multipart
 aiofiles
