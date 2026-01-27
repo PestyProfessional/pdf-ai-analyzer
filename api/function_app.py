@@ -220,6 +220,7 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
         
         if 'cognitiveservices.azure.com' in endpoint or 'openai.azure.com' in endpoint:
             # Direct Azure OpenAI/Cognitive Services endpoint
+            logging.info(f"Using Azure OpenAI endpoint: {endpoint}, model: {ai_foundry_model}")
             openai_client = openai.AzureOpenAI(
                 api_key=ai_foundry_api_key,
                 api_version="2024-12-01-preview",  # Latest API version
@@ -289,15 +290,23 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
         
         # Use OpenAI SDK to call the model
         # Matches Azure OpenAI format: model parameter should be deployment name
-        response = openai_client.chat.completions.create(
-            model=ai_foundry_model,  # Model deployment name (e.g., "gpt-4o-mini")
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            max_tokens=2000,  # Increased tokens for more detailed analysis
-            temperature=0.3
-        )
+        logging.info(f"Calling OpenAI API with model: {ai_foundry_model}")
+        try:
+            response = openai_client.chat.completions.create(
+                model=ai_foundry_model,  # Model deployment name (e.g., "gpt-4o-mini")
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                max_tokens=2000,  # Increased tokens for more detailed analysis
+                temperature=0.3
+            )
+            logging.info("OpenAI API call successful")
+        except Exception as api_error:
+            error_str = str(api_error)
+            logging.error(f"OpenAI API error: {error_str}", exc_info=True)
+            # Re-raise with more context
+            raise Exception(f"OpenAI API feil: {error_str}")
         
         ai_analysis = response.choices[0].message.content
         
@@ -365,9 +374,21 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
         )
         
     except Exception as e:
-        logging.error(f"Analysis error: {str(e)}")
+        error_msg = str(e)
+        logging.error(f"Analysis error: {error_msg}", exc_info=True)
+        
+        # Provide more helpful error messages
+        if "Could not resolve host" in error_msg or "Connection" in error_msg:
+            error_msg = "Kunne ikke koble til Azure AI-tjenesten. Sjekk nettverkstilkobling."
+        elif "authentication" in error_msg.lower() or "unauthorized" in error_msg.lower() or "401" in error_msg:
+            error_msg = "Autentisering feilet. Sjekk at API-nøkkelen er korrekt."
+        elif "model" in error_msg.lower() or "deployment" in error_msg.lower() or "404" in error_msg:
+            error_msg = f"Modell ikke funnet. Sjekk at '{ai_foundry_model}' er riktig deployment-navn."
+        elif "endpoint" in error_msg.lower():
+            error_msg = "Endpoint-konfigurasjon feilet. Sjekk AI_FOUNDRY_ENDPOINT."
+        
         return func.HttpResponse(
-            json.dumps({"error": f"Analysis failed: {str(e)}"}),
+            json.dumps({"error": error_msg}),
             status_code=500,
             mimetype="application/json"
         )

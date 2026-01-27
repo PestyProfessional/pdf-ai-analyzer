@@ -75,10 +75,23 @@ function App() {
       });
       
       if (!analysisResponse.ok) {
-        throw new Error(`Analysis failed: ${analysisResponse.statusText}`);
+        // Try to get error message from response
+        let errorMessage = analysisResponse.statusText;
+        try {
+          const errorData = await analysisResponse.json();
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch (e) {
+          // If response is not JSON, use status text
+        }
+        throw new Error(errorMessage);
       }
       
       const analysisResult = await analysisResponse.json();
+      
+      // Check if response contains error
+      if (analysisResult.error) {
+        throw new Error(analysisResult.error);
+      }
       
       setAnalysisResult({
         summary: analysisResult.summary,
