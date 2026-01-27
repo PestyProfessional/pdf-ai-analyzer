@@ -76,9 +76,10 @@ def upload_pdf(req: func.HttpRequest) -> func.HttpResponse:
             )
         
         # Validate file type
-        if not file.filename.lower().endswith('.pdf'):
+        allowed_extensions = ('.pdf', '.txt', '.csv', '.doc', '.docx')
+        if not file.filename.lower().endswith(allowed_extensions):
             return func.HttpResponse(
-                json.dumps({"error": "Only PDF files are allowed"}),
+                json.dumps({"error": "Only PDF, TXT, CSV, DOC, and DOCX files are allowed"}),
                 status_code=400,
                 mimetype="application/json"
             )
@@ -155,15 +156,33 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
         )
         blob_data = blob_client.download_blob().readall()
         
-        # Extract text using Document Intelligence
-        poller = doc_client.begin_analyze_document("prebuilt-read", blob_data)
-        result = poller.result()
-        
-        # Extract text content
-        extracted_text = ""
-        for page in result.pages:
-            for line in page.lines:
-                extracted_text += line.content + "\n"
+        # Extract text based on file type
+        filename = pdf_blob.name.lower()
+        if filename.endswith('.txt') or filename.endswith('.csv'):
+            # For text files, directly use content
+            extracted_text = blob_data.decode('utf-8')
+        elif filename.endswith('.pdf'):
+            # Use Document Intelligence for PDFs
+            poller = doc_client.begin_analyze_document("prebuilt-read", blob_data)
+            result = poller.result()
+            
+            # Extract text content
+            extracted_text = ""
+            for page in result.pages:
+                for line in page.lines:
+                    extracted_text += line.content + "\n"
+        else:
+            # For DOC/DOCX files, try Document Intelligence
+            try:
+                poller = doc_client.begin_analyze_document("prebuilt-read", blob_data)
+                result = poller.result()
+                
+                extracted_text = ""
+                for page in result.pages:
+                    for line in page.lines:
+                        extracted_text += line.content + "\n"
+            except:
+                extracted_text = "Kunne ikke lese dokument. Prøv med PDF eller TXT format."
         
         if not extracted_text.strip():
             return func.HttpResponse(

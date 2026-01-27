@@ -1,0 +1,36 @@
+RIKSREVISJONEN - RAPPORT TIL STORTINGET
+
+Evaluering av digitaliseringsprosjektet HelsePlattform Sør
+
+SAMMENDRAG
+Riksrevisjonen har evaluert digitaliseringsprosjektet HelsePlattform Sør, som har vært preget av betydelige utfordringer knyttet til kostnader, prosjektstyring og informasjonssikkerhet fra 2015 til 2022. Prosjektet har overskredet sitt opprinnelige budsjett med 60 prosent, og det er usikkerhet om fremtidig drift og gevinstrealisering.
+
+HOVEDFUNN
+1. Prosjektet hadde en opprinnelig kostnadsramme på 1,8 milliarder kroner, men de totale kostnadene har steget til 3,4 milliarder kroner - en overskridelse på 60 prosent.
+
+2. Det har vært flere endringer i styringsmodellen og hyppige lederbytter, noe som har svekket kontinuiteten i prosjektledelsen.
+
+3. Det er identifisert mangler i brukerinvolvering og oppfølging av leverandører, samt utilstrekkelig dokumentasjon i anskaffelsesprosessen.
+
+4. Prosjektets mål om en felles pasientjournal og integrasjon med kommunale helsetjenester har ikke blitt oppfylt innen de planlagte tidsrammene.
+
+NØKKELPERSONER
+Prosjektleder: Per Hansen
+IT-direktør: Maria Johansen  
+Avdelingsleder Helse Sør-Øst: Tom Eriksen
+
+ORGANISASJONER
+- Helse Sør-Øst RHF
+- Riksrevisjonen
+- Direktoratet for e-helse
+- Epic Systems Corporation (leverandør)
+
+TIDSPERIODE
+Prosjektperiode: 2015-2022
+Evalueringsperiode: 2022-2023
+
+KRITISKE PUNKTER
+- Budsjettoverskridelse på 1,6 milliarder kroner
+- Manglende risikostyring i anskaffelsesprosessen  
+- Utilstrekkelig testing før implementering
+- Svakt styringsrammeverk og hyppige organisasjonsendringer

@@ -15,10 +15,10 @@ const DocumentUpload = ({ onFileSelect }) => {
 
   const validateFile = (file) => {
     const maxSize = 50 * 1024 * 1024; // 50MB to handle 20-50 page documents
-    const allowedTypes = ['application/pdf'];
+    const allowedTypes = ['application/pdf', 'text/plain', 'text/csv', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
     
     if (!allowedTypes.includes(file.type)) {
-      return 'Kun PDF-filer er tillatt';
+      return 'Kun PDF, TXT, DOC, DOCX og CSV-filer er tillatt';
     }
     
     if (file.size > maxSize) {
@@ -122,7 +122,7 @@ const DocumentUpload = ({ onFileSelect }) => {
       </Typography>
 
       <Typography variant="body1" sx={{ mb: 6, color: 'rgba(255, 255, 255, 0.7)', fontSize: '1.2rem' }}>
-        Dra og slipp PDF-filen her eller klikk for å velge
+        Dra og slipp dokumentet her eller klikk for å velge
       </Typography>
 
       <Button
@@ -146,8 +146,8 @@ const DocumentUpload = ({ onFileSelect }) => {
 
       <Box sx={{ mb: 2 }}>
         <Chip 
-          icon={<PictureAsPdf />} 
-          label="PDF" 
+          icon={<Description />} 
+          label="PDF/TXT" 
           size="small" 
           sx={{ 
             mr: 1,
