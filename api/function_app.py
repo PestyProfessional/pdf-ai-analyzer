@@ -289,8 +289,8 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
         if not key_points:
             key_points = ["Dokumentanalyse ferdig", "Se full tekst for detaljer"]
         
-        # Clean up - delete the uploaded file
-        blob_client.delete_blob()
+        # Keep file for potential re-analysis or user access
+        # blob_client.delete_blob()  # Commented out - keep files
         
         return func.HttpResponse(
             json.dumps({
