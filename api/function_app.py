@@ -7,9 +7,8 @@ from azure.storage.blob import BlobServiceClient
 from azure.ai.formrecognizer import DocumentAnalysisClient
 from azure.core.credentials import AzureKeyCredential
 from azure.ai.inference import ChatCompletionsClient
-from azure.core.credentials import AzureKeyCredential
+from azure.identity import DefaultAzureCredential
 import uuid
-import asyncio
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
@@ -181,35 +180,69 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
             # For text files, directly use content
             extracted_text = blob_data.decode('utf-8')
         elif filename.endswith('.pdf'):
-            # Use Document Intelligence for PDFs with enhanced structure preservation
-            poller = doc_client.begin_analyze_document("prebuilt-layout", blob_data)  # Use layout for better structure
-            result = poller.result()
-            
-            # Extract text content with preserved structure
-            extracted_text = ""
-            for page_num, page in enumerate(result.pages):
-                if page_num > 0:
-                    extracted_text += f"\n--- Side {page_num + 1} ---\n"
-                
-                # Process tables first to maintain layout
-                for table in result.tables:
-                    if hasattr(table, 'bounding_regions') and table.bounding_regions:
-                        for region in table.bounding_regions:
-                            if region.page_number == page_num + 1:
-                                extracted_text += "\n[TABELL]\n"
-                                for cell in table.cells:
-                                    extracted_text += f"{cell.content}\t"
-                                    if cell.column_index == table.column_count - 1:
-                                        extracted_text += "\n"
-                                extracted_text += "[/TABELL]\n\n"
-                
-                # Then add regular text content
-                for line in page.lines:
-                    extracted_text += line.content + "\n"
-        else:
-            # For DOC/DOCX files, try Document Intelligence with layout
+            # Try Document Intelligence Read first (cheaper/faster), fallback to Layout if needed
             try:
+                poller = doc_client.begin_analyze_document("prebuilt-read", blob_data)
+                result = poller.result()
+                
+                # Simple text extraction
+                extracted_text = ""
+                for page_num, page in enumerate(result.pages):
+                    if page_num > 0:
+                        extracted_text += f"\n--- Side {page_num + 1} ---\n"
+                    
+                    for line in page.lines:
+                        extracted_text += line.content + "\n"
+                
+                # Check if we should fallback to layout analysis for better structure
+                # Simple heuristic: if document seems to have many short lines (potential tables)
+                lines = extracted_text.split('\n')
+                short_lines = sum(1 for line in lines if len(line.strip()) < 20 and len(line.strip()) > 0)
+                if short_lines > len(lines) * 0.3:  # More than 30% short lines
+                    logging.info("Document appears to have tables, using layout analysis")
+                    raise Exception("Fallback to layout")
+                    
+            except:
+                # Fallback to layout analysis for better structure preservation
+                logging.info("Using layout analysis for better structure preservation")
                 poller = doc_client.begin_analyze_document("prebuilt-layout", blob_data)
+                result = poller.result()
+                
+                # Group tables by page to avoid duplication
+                tables_by_page = {}
+                if hasattr(result, 'tables') and result.tables:
+                    for table in result.tables:
+                        if hasattr(table, 'bounding_regions') and table.bounding_regions:
+                            page_num = table.bounding_regions[0].page_number
+                            if page_num not in tables_by_page:
+                                tables_by_page[page_num] = []
+                            tables_by_page[page_num].append(table)
+                
+                # Extract text content with preserved structure
+                extracted_text = ""
+                for page_num, page in enumerate(result.pages):
+                    current_page = page_num + 1
+                    if page_num > 0:
+                        extracted_text += f"\n--- Side {current_page} ---\n"
+                    
+                    # Add tables for this page
+                    if current_page in tables_by_page:
+                        for table in tables_by_page[current_page]:
+                            extracted_text += "\n[TABELL]\n"
+                            for cell in table.cells:
+                                extracted_text += f"{cell.content}\t"
+                                if cell.column_index == table.column_count - 1:
+                                    extracted_text += "\n"
+                            extracted_text += "[/TABELL]\n\n"
+                    
+                    # Add regular text content
+                    for line in page.lines:
+                        extracted_text += line.content + "\n"
+        else:
+            # For DOC/DOCX files, try Document Intelligence Read first, then Layout if needed
+            try:
+                # Try basic read first
+                poller = doc_client.begin_analyze_document("prebuilt-read", blob_data)
                 result = poller.result()
                 
                 extracted_text = ""
@@ -217,31 +250,51 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
                     if page_num > 0:
                         extracted_text += f"\n--- Side {page_num + 1} ---\n"
                     
-                    # Process tables first
-                    for table in result.tables:
-                        if hasattr(table, 'bounding_regions') and table.bounding_regions:
-                            for region in table.bounding_regions:
-                                if region.page_number == page_num + 1:
-                                    extracted_text += "\n[TABELL]\n"
-                                    for cell in table.cells:
-                                        extracted_text += f"{cell.content}\t"
-                                        if cell.column_index == table.column_count - 1:
-                                            extracted_text += "\n"
-                                    extracted_text += "[/TABELL]\n\n"
-                    
                     for line in page.lines:
                         extracted_text += line.content + "\n"
+                
+                # Check if layout analysis might be beneficial
+                lines = extracted_text.split('\n')
+                short_lines = sum(1 for line in lines if len(line.strip()) < 20 and len(line.strip()) > 0)
+                if short_lines > len(lines) * 0.3:
+                    raise Exception("Fallback to layout for better structure")
+                    
             except Exception as structure_error:
-                logging.warning(f"Layout analysis failed, falling back to basic read: {structure_error}")
-                # Fallback to basic read
+                logging.warning(f"Attempting layout analysis for better structure: {structure_error}")
                 try:
-                    poller = doc_client.begin_analyze_document("prebuilt-read", blob_data)
+                    # Fallback to layout analysis
+                    poller = doc_client.begin_analyze_document("prebuilt-layout", blob_data)
                     result = poller.result()
                     
+                    # Group tables by page
+                    tables_by_page = {}
+                    if hasattr(result, 'tables') and result.tables:
+                        for table in result.tables:
+                            if hasattr(table, 'bounding_regions') and table.bounding_regions:
+                                page_num = table.bounding_regions[0].page_number
+                                if page_num not in tables_by_page:
+                                    tables_by_page[page_num] = []
+                                tables_by_page[page_num].append(table)
+                    
                     extracted_text = ""
-                    for page in result.pages:
+                    for page_num, page in enumerate(result.pages):
+                        current_page = page_num + 1
+                        if page_num > 0:
+                            extracted_text += f"\n--- Side {current_page} ---\n"
+                        
+                        # Add tables for this page
+                        if current_page in tables_by_page:
+                            for table in tables_by_page[current_page]:
+                                extracted_text += "\n[TABELL]\n"
+                                for cell in table.cells:
+                                    extracted_text += f"{cell.content}\t"
+                                    if cell.column_index == table.column_count - 1:
+                                        extracted_text += "\n"
+                                extracted_text += "[/TABELL]\n\n"
+                        
                         for line in page.lines:
                             extracted_text += line.content + "\n"
+                            
                 except:
                     extracted_text = "Kunne ikke lese dokument. Prøv med PDF eller TXT format."
         
@@ -282,10 +335,10 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
                 last_newline = chunk.rfind('\n')
                 break_point = max(last_period, last_newline)
                 
-                if break_point > start + max_chunk_size * 0.7:  # If we found a good break point
+                if break_point > 0 and break_point > max_chunk_size * 0.7:  # Good break point found
                     chunks.append(text[start:start + break_point + 1])
                     start = start + break_point + 1 - overlap
-                else:  # Otherwise break at max size
+                else:  # No good break point, use max size
                     chunks.append(chunk)
                     start = end - overlap
                     
@@ -391,34 +444,31 @@ Analyser dokumentet objektivt og detaljert på norsk."""
             for i, chunk in enumerate(text_chunks):
                 logging.info(f"Analyserer chunk {i+1}/{len(text_chunks)}")
                 
-                chunk_prompt = f"""Analyser denne delen av et større dokument for Dagens Næringsliv.
-Returner resultatet som gyldig JSON:
+                chunk_system = "Du analyserer dokumenter for Dagens Næringsliv. Returner KUN gyldig JSON uten markdown eller kommentarer."
+                chunk_user = f"""Analyser denne delen av et større dokument.
 
+JSON format:
 {{
   "sammendrag": ["Viktige punkter fra denne delen"],
   "nøkkelinformasjon": {{
-    "personer": ["Personer nevnt i denne delen"],
-    "selskaper": ["Selskaper nevnt i denne delen"],
-    "offentlige_etater": ["Etater nevnt i denne delen"],
-    "tidsperiode": "Tidsinfo fra denne delen"
+    "personer": ["Personer nevnt"], "selskaper": ["Selskaper nevnt"], 
+    "offentlige_etater": ["Etater nevnt"], "tidsperiode": "Tidsinfo"
   }},
   "røde_flagg": {{
-    "uvanlige_formuleringer": ["Mistenkelige formuleringer"],
-    "avvik_og_kritikk": ["Kritikk og avvik"],
-    "økonomiske_størrelser": ["Tall og beløp"],
-    "varsler_og_mangler": ["Mangler og varsler"],
-    "andre_røde_flagg": ["Andre bekymringer"]
+    "uvanlige_formuleringer": [], "avvik_og_kritikk": [], "økonomiske_størrelser": [],
+    "varsler_og_mangler": [], "andre_røde_flagg": []
   }}
 }}
 
-Del {i+1} av {len(text_chunks)}:
+Del {i+1}/{len(text_chunks)}:
 {chunk}"""
                 
                 try:
                     response = ai_client.complete(
                         model=ai_foundry_model,
                         messages=[
-                            {"role": "user", "content": chunk_prompt}
+                            {"role": "system", "content": chunk_system},
+                            {"role": "user", "content": chunk_user}
                         ],
                         max_tokens=1500,
                         temperature=0.3
@@ -426,38 +476,34 @@ Del {i+1} av {len(text_chunks)}:
                     chunk_analyses.append(response.choices[0].message.content)
                 except Exception as api_error:
                     logging.error(f"Feil ved analyse av chunk {i+1}: {api_error}")
-                    chunk_analyses.append('{"sammendrag": ["Kunne ikke analysere denne delen"], "nøkkelinformasjon": {}, "røde_flagg": {}}')
+                    chunk_analyses.append('{"sammendrag": ["Kunne ikke analysere denne delen"], "nøkkelinformasjon": {"personer": [], "selskaper": [], "offentlige_etater": [], "tidsperiode": ""}, "røde_flagg": {"uvanlige_formuleringer": [], "avvik_og_kritikk": [], "økonomiske_størrelser": [], "varsler_og_mangler": [], "andre_røde_flagg": []}}')
             
             # Step 2: Synthesize all chunk analyses
-            synthesis_prompt = f"""Du har mottatt analyser av {len(text_chunks)} deler av et dokument for Dagens Næringsliv.
-Kombiner og syntetiser disse analysene til en sammenhengende, komplett analyse.
-Returner resultatet som gyldig JSON:
+            synthesis_system = "Du syntetiserer dokumentanalyser for Dagens Næringsliv. Returner KUN gyldig JSON uten markdown."
+            synthesis_user = f"""Kombiner disse {len(text_chunks)} delanalysene til en komplett analyse.
 
+JSON format:
 {{
   "sammendrag": ["5-8 hovedpunkter fra hele dokumentet"],
   "nøkkelinformasjon": {{
-    "personer": ["Alle personer nevnt i dokumentet"],
-    "selskaper": ["Alle selskaper nevnt i dokumentet"],
-    "offentlige_etater": ["Alle etater nevnt i dokumentet"],
-    "tidsperiode": "Samlet tidsperiode for dokumentet"
+    "personer": ["Alle personer"], "selskaper": ["Alle selskaper"], 
+    "offentlige_etater": ["Alle etater"], "tidsperiode": "Samlet periode"
   }},
   "røde_flagg": {{
-    "uvanlige_formuleringer": ["Alle mistenkelige formuleringer"],
-    "avvik_og_kritikk": ["All kritikk og avvik"],
-    "økonomiske_størrelser": ["Alle viktige tall og beløp"],
-    "varsler_og_mangler": ["Alle mangler og varsler"],
-    "andre_røde_flagg": ["Andre bekymringsfulle elementer"]
+    "uvanlige_formuleringer": [], "avvik_og_kritikk": [], "økonomiske_størrelser": [],
+    "varsler_og_mangler": [], "andre_røde_flagg": []
   }}
 }}
 
-Analyser fra delene:
+Delanalyser:
 {chr(10).join([f"Del {i+1}: {analysis}" for i, analysis in enumerate(chunk_analyses)])}"""
             
             try:
                 response = ai_client.complete(
                     model=ai_foundry_model,
                     messages=[
-                        {"role": "user", "content": synthesis_prompt}
+                        {"role": "system", "content": synthesis_system},
+                        {"role": "user", "content": synthesis_user}
                     ],
                     max_tokens=2500,
                     temperature=0.3
@@ -469,17 +515,38 @@ Analyser fra delene:
                 logging.error(f"Feil ved syntese: {error_str}", exc_info=True)
                 raise Exception(f"Feil ved syntese av analyse: {error_str}")
         
-        # Parse JSON response instead of markdown
+        # Parse JSON response with repair attempt
         try:
             analysis_data = json.loads(ai_analysis)
         except json.JSONDecodeError as json_error:
-            logging.error(f"JSON parsing feil: {json_error}, response: {ai_analysis}")
-            # Fallback to simple response
-            analysis_data = {
-                "sammendrag": ["Dokumentet har blitt analysert"],
-                "nøkkelinformasjon": {"personer": [], "selskaper": [], "offentlige_etater": [], "tidsperiode": ""},
-                "røde_flagg": {"uvanlige_formuleringer": [], "avvik_og_kritikk": [], "økonomiske_størrelser": [], "varsler_og_mangler": [], "andre_røde_flagg": []}
-            }
+            logging.warning(f"Første JSON parsing feil: {json_error}, prøver reparasjon")
+            # Try JSON repair
+            try:
+                repair_system = "Du reparerer ugyldig JSON. Returner KUN gyldig JSON, ingen forklaringer eller markdown."
+                repair_user = f"Reparer denne JSON til gyldig format:\n{ai_analysis}"
+                
+                repair_response = ai_client.complete(
+                    model=ai_foundry_model,
+                    messages=[
+                        {"role": "system", "content": repair_system},
+                        {"role": "user", "content": repair_user}
+                    ],
+                    max_tokens=1500,
+                    temperature=0.1
+                )
+                
+                repaired_json = repair_response.choices[0].message.content
+                analysis_data = json.loads(repaired_json)
+                logging.info("JSON reparasjon suksessful")
+                
+            except Exception as repair_error:
+                logging.error(f"JSON reparasjon feilet: {repair_error}")
+                # Final fallback to simple response
+                analysis_data = {
+                    "sammendrag": ["Dokumentet har blitt analysert"],
+                    "nøkkelinformasjon": {"personer": [], "selskaper": [], "offentlige_etater": [], "tidsperiode": ""},
+                    "røde_flagg": {"uvanlige_formuleringer": [], "avvik_og_kritikk": [], "økonomiske_størrelser": [], "varsler_og_mangler": [], "andre_røde_flagg": []}
+                }
         
         # Create formatted output from structured JSON
         sammendrag_punkter = analysis_data.get("sammendrag", [])
