@@ -181,12 +181,32 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
         
         # Create analysis prompt
         system_prompt = """Du er en AI-assistent som analyserer dokumenter for Dagens Næringsliv. 
-        Analyser det oppgitte dokumentet og gi:
-        1. En kort oppsummering (2-3 setninger)
-        2. 3-5 hovedpunkter
-        3. Viktige konklusjoner eller anbefalinger
+        Analyser det oppgitte dokumentet og gi NØYAKTIG følgende struktur:
+
+        **KORT SAMMENDRAG (5-8 punkter):**
+        - [Punkt 1]
+        - [Punkt 2] 
+        - [Punkt 3]
+        - [Punkt 4]
+        - [Punkt 5]
+        - [Punkt 6 hvis relevant]
+        - [Punkt 7 hvis relevant]
+        - [Punkt 8 hvis relevant]
+
+        **NØKKELINFORMASJON:**
+        Personer: [Liste opp alle navngitte personer]
+        Selskaper: [Liste opp alle navngitte selskaper/organisasjoner]
+        Offentlige etater: [Liste opp alle offentlige institusjoner]
+        Tidsperiode: [Spesifiser hvilken tidsperiode dokumentet gjelder]
+
+        **MULIGE RØDE FLAGG:**
+        - Uvanlige formuleringer: [Noter spesielle eller mistenkelige formuleringer]
+        - Avvik og kritikk: [Identifiser kritikkpunkter eller avvik]
+        - Økonomiske størrelser: [Fremhev alle økonomiske tall, budsjettoverskridelser, tap]
+        - Varsler og manglende svar: [Noter hvis noe mangler eller virker uklart]
+        - Andre røde flagg: [Andre bekymringsfulle elementer]
         
-        Svar på norsk og vær objektiv og faktabasert."""
+        Svar på norsk, vær objektiv og detaljert."""
         
         user_prompt = f"Analyser følgende dokument:\n\n{extracted_text[:20000]}"  # Increased text length for larger documents
         
@@ -202,31 +222,47 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
         
         ai_analysis = response.choices[0].message.content
         
-        # Parse the AI response to extract summary and key points
+        # Parse the structured AI response
         lines = ai_analysis.split('\n')
-        summary = ""
-        key_points = []
+        summary_points = []
+        key_info = {}
+        red_flags = []
         current_section = ""
         
         for line in lines:
             line = line.strip()
             if not line:
                 continue
-            if "oppsummering" in line.lower() or "sammendrag" in line.lower():
+                
+            # Identify sections
+            if "**KORT SAMMENDRAG" in line or "sammendrag" in line.lower():
                 current_section = "summary"
                 continue
-            elif "hovedpunkt" in line.lower() or "viktig" in line.lower():
-                current_section = "points"
+            elif "**NØKKELINFORMASJON" in line or "nøkkelinformasjon" in line.lower():
+                current_section = "info"
                 continue
-            elif line.startswith(('-', '•', '1.', '2.', '3.', '4.', '5.')):
-                if current_section == "points":
-                    key_points.append(line.lstrip('-• 123456789.').strip())
+            elif "**MULIGE RØDE FLAGG" in line or "røde flagg" in line.lower():
+                current_section = "flags"
                 continue
             
-            if current_section == "summary" and not summary:
-                summary = line
-            elif current_section == "points" and line:
-                key_points.append(line)
+            # Parse content based on section
+            if current_section == "summary" and line.startswith('-'):
+                summary_points.append(line.lstrip('-• ').strip())
+            elif current_section == "info":
+                if "Personer:" in line:
+                    key_info["personer"] = line.replace("Personer:", "").strip()
+                elif "Selskaper:" in line:
+                    key_info["selskaper"] = line.replace("Selskaper:", "").strip()
+                elif "Offentlige etater:" in line:
+                    key_info["etater"] = line.replace("Offentlige etater:", "").strip()
+                elif "Tidsperiode:" in line:
+                    key_info["tidsperiode"] = line.replace("Tidsperiode:", "").strip()
+            elif current_section == "flags" and line.startswith('-'):
+                red_flags.append(line.lstrip('-• ').strip())
+        
+        # Create formatted summary and key points for frontend
+        summary = " ".join(summary_points[:3]) if summary_points else "Kunne ikke generere sammendrag"
+        key_points = summary_points + [f"Nøkkelinfo: {info}" for info in key_info.values() if info] + [f"Rødt flagg: {flag}" for flag in red_flags[:3]]
         
         # Fallback if parsing fails
         if not summary:
@@ -240,8 +276,9 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(
             json.dumps({
                 "summary": summary,
-                "key_points": key_points[:5],  # Limit to 5 points
+                "key_points": key_points[:8],  # Increased to show more details
                 "confidence": 0.85,
+                "full_analysis": ai_analysis,  # Include full structured analysis
                 "extracted_text": extracted_text[:1000] + "..." if len(extracted_text) > 1000 else extracted_text
             }),
             status_code=200,

@@ -22,7 +22,7 @@ import {
 } from '@mui/icons-material';
 
 const ResultsDisplay = ({ result, onNewAnalysis }) => {
-  const { summary, keyPoints, confidence } = result;
+  const { summary, keyPoints, confidence, full_analysis } = result;
   
   const getConfidenceColor = (confidence) => {
     if (confidence >= 0.8) return 'success';
@@ -100,6 +100,31 @@ const ResultsDisplay = ({ result, onNewAnalysis }) => {
           </List>
         </CardContent>
       </Card>
+
+      {/* Full Structured Analysis */}
+      {full_analysis && (
+        <Card sx={{ mt: 3 }}>
+          <CardContent>
+            <Typography variant="h5" sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
+              <Insights sx={{ mr: 1 }} />
+              Detaljert analyse
+            </Typography>
+            <Box sx={{ 
+              bgcolor: 'rgba(0,0,0,0.05)', 
+              p: 2, 
+              borderRadius: 1,
+              maxHeight: 400,
+              overflow: 'auto',
+              fontFamily: 'monospace',
+              whiteSpace: 'pre-wrap',
+              fontSize: '0.9rem',
+              lineHeight: 1.6
+            }}>
+              {full_analysis}
+            </Box>
+          </CardContent>
+        </Card>
+      )}
 
       <Divider sx={{ my: 3 }} />
 
