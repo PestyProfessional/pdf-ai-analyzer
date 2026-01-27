@@ -211,6 +211,14 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
         # Handle different endpoint formats
         endpoint = ai_foundry_endpoint.rstrip('/')
         
+        # Validate endpoint format
+        if not endpoint.startswith('https://'):
+            return func.HttpResponse(
+                json.dumps({"error": f"Invalid endpoint format: {endpoint}. Must start with https://"}),
+                status_code=500,
+                mimetype="application/json"
+            )
+        
         # Use Azure OpenAI SDK with latest API version
         # Supports various endpoint formats:
         # - https://<resource>.cognitiveservices.azure.com/
@@ -221,11 +229,15 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
         if 'cognitiveservices.azure.com' in endpoint or 'openai.azure.com' in endpoint:
             # Direct Azure OpenAI/Cognitive Services endpoint
             logging.info(f"Using Azure OpenAI endpoint: {endpoint}, model: {ai_foundry_model}")
-            openai_client = openai.AzureOpenAI(
-                api_key=ai_foundry_api_key,
-                api_version="2024-12-01-preview",  # Latest API version
-                azure_endpoint=endpoint
-            )
+            try:
+                openai_client = openai.AzureOpenAI(
+                    api_key=ai_foundry_api_key,
+                    api_version="2024-12-01-preview",  # Latest API version
+                    azure_endpoint=endpoint
+                )
+            except Exception as client_error:
+                logging.error(f"Failed to create Azure OpenAI client: {client_error}")
+                raise Exception(f"Kunne ikke opprette Azure OpenAI klient: {str(client_error)}")
         elif 'api.cognitive.microsoft.com' in endpoint:
             # Regional endpoint - construct resource-specific endpoint
             # For regional endpoints, we may need the full resource endpoint
