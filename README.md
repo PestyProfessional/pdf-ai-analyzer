@@ -1,100 +1,37 @@
 # DN AI Dokumentanalyse
 
-AI-drevet dokumentanalyse for Dagens Næringsliv som ekstraherer tekst fra PDF-filer og genererer intelligente oppsummeringer.
+Formell og profesjonell løsning for Dagens Næringsliv som automatiserer dokumentanalyse. Brukeren laster opp dokumenter og mottar en strukturert oppsummering, nøkkelinformasjon og mulige røde flagg – raskt og konsistent.
 
-## 🚀 Funksjonalitet
+## Kort arkitekturbeskrivelse
 
-- **PDF Upload**: Dra og slipp PDF-dokumenter (maks 10MB)
-- **AI Tekstekstraksjon**: Azure AI Document Intelligence for robust OCR
-- **Intelligent Analyse**: Azure AI Foundry LLM for norskspråklig oppsummering
-- **Sikker Lagring**: Azure Blob Storage i Norge for GDPR-compliance
+- **Frontend**: React, Material UI og Vite for et strømlinjeformet brukergrensesnitt med opplasting, status og resultater.
+- **Backend**: Azure Functions (Python) med to HTTP‑endepunkter: `POST /api/upload` og `POST /api/analyze/{file_id}`.
+- **Lagring**: Azure Blob Storage (container `pdf-uploads`) for sikre opplastinger.
+- **Tekstekstraksjon**: Azure AI Document Intelligence (`prebuilt-read`) for PDF/DOC/DOCX, direkte lesing for TXT/CSV.
+- **Analyse**: Azure AI Foundry (eller Azure OpenAI‑kompatibelt endpoint) via `ChatCompletionsClient`.
 
-## 🏗️ Arkitektur
+## Hvordan KI brukes
 
-### Frontend
-- **React 18** med TypeScript og Material-UI
-- **Vite** for rask utvikling og build
-- **Azure Static Web Apps** for hosting
+- Etter opplasting hentes filen fra Blob Storage og tekst ekstraheres.
+- En fast prompt instruerer modellen til å returnere:
+  - **Kort sammendrag (5–8 punkter)**
+  - **Nøkkelinformasjon** (personer, selskaper, etater, tidsperiode)
+  - **Mulige røde flagg**
+- Resultatet parses og presenteres i UI som sammendrag og hovedpunkter, med valgfri detaljert analyse.
 
-### Backend
-- **Azure Functions** (Python) for serverless API
-- **Azure AI Document Intelligence** (Norway East)
-- **Azure AI Foundry** for LLM-basert dokumentanalyse 
-- **Azure Blob Storage** (Norway East)
+## Begrensninger i løsningen
 
-### Deployment
-- **GitHub Actions** for CI/CD
-- **Azure Static Web Apps** med integrert API
-- **Environment Secrets** for sikker nøkkelbehandling
+- **Tekstgrense**: Kun de første ~20 000 tegnene sendes til modellen, som kan gi ufullstendig dekning av lange dokumenter.
+- **Kvalitet av OCR**: Analysen avhenger av kvaliteten i Document Intelligence‑ekstraksjonen.
+- **Ingen autentisering**: Endepunktene er satt til anonym tilgang.
+- **Filhåndtering**: Opplastede filer blir liggende i Blob Storage (sletting er kommentert ut), selv om UI antyder automatisk sletting.
+- **Validering**: Frontend tillater 50 MB og flere filtyper, mens backend kun sjekker filendelse (ikke innhold).
 
-## 🛠️ Lokal Utvikling
+## Hva jeg ville forbedret med mer tid
 
-**Se `LOCAL_TESTING_GUIDE.md` for detaljert guide.**
+- **Sikkerhet og tilgang**: Innføre autentisering/autorisasjon, rate limiting og bedre validering av filinnhold.
+- **Databehandling**: Automatisk sletting/retensjonspolicy og presis brukerkommunikasjon om lagring.
+- **Analyse**: Chunking av lange dokumenter og sammenslåing av resultater for full dekning.
+- **Kvalitet**: Domene‑spesifikke prompt‑varianter og kontrollpunkter for høyere presisjon.
+- **Observability**: Strukturert logging, korrelasjons‑ID og metrikker for drift og feilsøking.
 
-### Quick Start
-
-```bash
-# 1. Sett opp backend
-cd api
-cp local.settings.json.example local.settings.json
-# Rediger local.settings.json med dine verdier
-pip install -r requirements.txt
-func start  # Kjører på http://localhost:7071
-
-# 2. Sett opp frontend (i nytt terminalvindu)
-cd frontend
-npm install
-npm run dev  # Kjører på http://localhost:5173
-```
-
-### Testing
-
-- **Lokalt**: Se `LOCAL_TESTING_GUIDE.md` for full guide
-- **Produksjon**: https://brave-ground-0673aca03.6.azurestaticapps.net/
-
-## 🔐 Environment Variabler
-
-### For GitHub Secrets (CI/CD):
-**Se `GITHUB_SECRETS_UPDATE_GUIDE.md` for detaljert steg-for-steg guide.**
-
-Nødvendige secrets:
-- `DOC_INTELLIGENCE_KEY`: Azure Document Intelligence API-nøkkel
-- `DOC_INTELLIGENCE_ENDPOINT`: Azure Document Intelligence endpoint URL
-- `AI_FOUNDRY_ENDPOINT`: Azure AI Foundry endpoint (f.eks. https://<resource-name>.services.ai.azure.com)
-- `AI_FOUNDRY_API_KEY`: Azure AI Foundry API-nøkkel
-- `AI_FOUNDRY_MODEL`: Model deployment name i Azure AI Foundry (standard: gpt-4o-mini)
-- `AZURE_STORAGE_CONNECTION_STRING`: Azure Storage tilkoblingsstreng
-- `AZURE_STORAGE_ACCOUNT_KEY`: (valgfritt) Azure Storage account key
-- `AZUREWEBJOBSSTORAGE`: (valgfritt) Azure Functions storage connection
-
-### For Azure Function App (via Azure Portal):
-Se `AZURE_AI_FOUNDRY_SETUP.md` for konfigurasjonsguide.
-
-## 📊 Kostnadsoptimalisering
-
-- **Azure Functions Consumption Plan**: Pay-per-use
-- **GPT-4o-mini**: Kostnadseffektiv AI-modell
-- **Free Tier**: Document Intelligence F0, Storage LRS
-- **Estimat**: <50 NOK/måned ved moderat bruk
-
-## 🇳🇴 Compliance
-
-- **Data i Norge**: Storage og Document Intelligence i Norway East
-- **GDPR**: Automatisk sletting av opplastede filer
-- **Sikkerhet**: HTTPS, API-nøkler, ingen persistent lagring
-
-## 🚦 Status
-
-✅ Infrastructure (Azure)  
-✅ Backend API (Functions)  
-✅ Frontend (React)  
-✅ Deployment (GitHub Actions)  
-✅ Live Application: https://brave-ground-0673aca03.6.azurestaticapps.net/
-
-## 🎨 Design Features
-
-- **DN Branding**: Dagens Næringsliv logo og farger
-- **Aeonik Typography**: Work Sans font for moderne utseende  
-- **Glassmorphism**: Moderne UI med blur-effekter
-- **Seamless Sections**: Sømløs overgang mellom UI-seksjoner
-- **Responsive Design**: Optimalisert for alle enheter# Trigger deployment
