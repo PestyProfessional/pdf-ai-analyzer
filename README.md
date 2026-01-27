@@ -4,7 +4,7 @@ Formell og profesjonell løsning for Dagens Næringsliv som automatiserer dokume
 
 ## Kort arkitekturbeskrivelse
 
-- **Frontend**: React + Material UI (Vite) for et strømlinjeformet brukergrensesnitt med opplasting, status og resultater.
+- **Frontend**: React, Material UI og Vite for et strømlinjeformet brukergrensesnitt med opplasting, status og resultater.
 - **Backend**: Azure Functions (Python) med to HTTP‑endepunkter: `POST /api/upload` og `POST /api/analyze/{file_id}`.
 - **Lagring**: Azure Blob Storage (container `pdf-uploads`) for sikre opplastinger.
 - **Tekstekstraksjon**: Azure AI Document Intelligence (`prebuilt-read`) for PDF/DOC/DOCX, direkte lesing for TXT/CSV.
