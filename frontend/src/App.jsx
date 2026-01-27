@@ -138,6 +138,7 @@ function App() {
             >
               Dokumentanalyse
             </Typography>
+            {/* Updated Azure settings - deployment trigger */}
             
             <Typography 
               variant="h6" 
