@@ -29,17 +29,28 @@ AI-drevet dokumentanalyse for Dagens Næringsliv som ekstraherer tekst fra PDF-f
 
 ## 🛠️ Lokal Utvikling
 
+**Se `LOCAL_TESTING_GUIDE.md` for detaljert guide.**
+
+### Quick Start
+
 ```bash
-# Frontend
+# 1. Sett opp backend
+cd api
+cp local.settings.json.example local.settings.json
+# Rediger local.settings.json med dine verdier
+pip install -r requirements.txt
+func start  # Kjører på http://localhost:7071
+
+# 2. Sett opp frontend (i nytt terminalvindu)
 cd frontend
 npm install
-npm run dev
-
-# Backend  
-cd api
-pip install -r requirements.txt
-func start
+npm run dev  # Kjører på http://localhost:5173
 ```
+
+### Testing
+
+- **Lokalt**: Se `LOCAL_TESTING_GUIDE.md` for full guide
+- **Produksjon**: https://brave-ground-0673aca03.6.azurestaticapps.net/
 
 ## 🔐 Environment Variabler
 

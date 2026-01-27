@@ -1,0 +1,13 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "DOC_INTELLIGENCE_ENDPOINT": "https://<din-doc-intelligence-endpoint>",
+    "DOC_INTELLIGENCE_KEY": "<din-doc-intelligence-key>",
+    "AI_FOUNDRY_ENDPOINT": "https://lillw-mkwnaj9t-eastus2.cognitiveservices.azure.com/",
+    "AI_FOUNDRY_API_KEY": "<din-api-key>",
+    "AI_FOUNDRY_MODEL": "gpt-4o-mini",
+    "AZURE_STORAGE_CONNECTION_STRING": "<din-storage-connection-string>"
+  }
+}
