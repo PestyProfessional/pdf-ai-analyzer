@@ -352,7 +352,7 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
         # Analyse med Azure AI Foundry
         ai_foundry_endpoint = os.getenv('AI_FOUNDRY_ENDPOINT')
         ai_foundry_api_key = os.getenv('AI_FOUNDRY_API_KEY')
-        ai_foundry_model = os.getenv('AI_FOUNDRY_MODEL', 'lillw-mkwnaj9t-eastus2')
+        ai_foundry_model = os.getenv('AI_FOUNDRY_MODEL', 'gpt-4o-mini')
         
         if not ai_foundry_endpoint or not ai_foundry_api_key:
             return func.HttpResponse(
