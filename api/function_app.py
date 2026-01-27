@@ -253,14 +253,27 @@ def analyze_pdf(req: func.HttpRequest) -> func.HttpResponse:
                 azure_endpoint=endpoint
             )
         elif 'services.ai.azure.com' in endpoint:
-            # Azure AI Foundry format - add /models if not present
+            # Azure AI Foundry format
+            # Endpoint format: https://<resource>.services.ai.azure.com/models
+            # Ensure /models is present
             if not endpoint.endswith('/models'):
                 endpoint = f"{endpoint}/models"
-            # Use OpenAI SDK with custom base_url for Azure AI Foundry
-            openai_client = openai.OpenAI(
-                api_key=ai_foundry_api_key,
-                base_url=f"{endpoint}/openai/deployments/{ai_foundry_model}"
-            )
+            
+            logging.info(f"Using Azure AI Foundry endpoint: {endpoint}, model: {ai_foundry_model}")
+            
+            # Azure AI Foundry with /models endpoint uses Azure OpenAI-compatible API
+            # Remove /models suffix for Azure OpenAI SDK (it adds it automatically)
+            base_endpoint = endpoint.replace('/models', '')
+            
+            try:
+                openai_client = openai.AzureOpenAI(
+                    api_key=ai_foundry_api_key,
+                    api_version="2024-12-01-preview",
+                    azure_endpoint=base_endpoint
+                )
+            except Exception as client_error:
+                logging.error(f"Failed to create Azure OpenAI client for Foundry: {client_error}")
+                raise Exception(f"Kunne ikke opprette Azure AI Foundry klient: {str(client_error)}")
         else:
             # Default: try Azure OpenAI format with latest API version
             openai_client = openai.AzureOpenAI(
