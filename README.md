@@ -68,6 +68,11 @@ MAX_CHUNKS=15
 ```
 
 ### Deployment
-- **Frontend**: Azure Static Web Apps via GitHub Actions
+- **Frontend**: Azure Static Web Apps via GitHub Actions  
 - **Backend**: Azure Functions Python runtime
-- **URL**: https://ambitious-water-0be26b503.4.azurestaticapps.net
+- **URL**: https://brave-ground-0673aca03.6.azurestaticapps.net
+
+### Infrastruktur-requirements
+- **Azure Storage Container**: Må opprette container `pdf-uploads` i Blob Storage før første kjøring
+- **Azure AI Document Intelligence**: Service må være opprettet med korrekt endpoint og nøkkel
+- **Azure AI Foundry**: Deployment med modell `lillw-mkwnaj9t-eastus2` må være tilgjengelig
