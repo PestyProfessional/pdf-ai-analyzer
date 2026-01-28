@@ -50,7 +50,7 @@ Modellen instrueres til å returnere strukturert JSON med:
 ## Begrensninger i prototypen
 
 - Ingen autentisering eller rate limiting  
-- OCR-kvalitet avhenger av dokumentets struktur og kvalitet  
+- OCR (optisk tegngjenkjenning)-kvalitet avhenger av dokumentets struktur og kvalitet  
 - Primært optimalisert for norsk språk  
 
 ## Konfigurasjon
